@@ -37,7 +37,9 @@ setup(
 		'Perdy',
 	],
 	scripts=[
-		'bin/myEC2.py',
 		'bin/mySG.py',
+		'bin/myEC2.py',
+		'bin/mySSH.py',
+		'bin/mySCP.py',
 	],
 )
