@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 import os
@@ -8,7 +7,7 @@ from configparser import ConfigParser
 #___________________________________________________________________
 def config(home='~/'):
 	'''
-	return a dict of the { profile: { key: value }	}
+	return a dict of the .aws files { profile: { key: value }	}
 	'''
 	
 	parser = ConfigParser()
@@ -18,10 +17,11 @@ def config(home='~/'):
 		if os.path.exists(dot_aws):
 			parser.read(dot_aws)	
 				
-	_config = dict.fromkeys(parser.sections())
-	for key in _config.keys():
-		_config[key] = dict()
+	result = dict.fromkeys(parser.sections())
+	for key in result.keys():
+		result[key] = dict()
 		for (name,value) in parser.items(key):
-			_config[key][name] = value
+			result[key][name] = value
 
-	return _config
+	return result
+
