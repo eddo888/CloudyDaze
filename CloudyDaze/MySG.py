@@ -55,6 +55,9 @@ class MySG(object):
 		else:
 			logger.setLevel(logging.INFO)
 
+		if self.verbose:
+		print(json.dumps(self.config))
+		
 		self.conn = boto.ec2.connect_to_region(
 			self.config[self.profile]['region'],
 			aws_access_key_id=self.config[self.profile]['aws_access_key_id'],
