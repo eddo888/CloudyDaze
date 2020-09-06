@@ -7,7 +7,7 @@ from datetime import datetime
 from socket import timeout as SocketTimeout
 from distutils.version import StrictVersion
 
-from Tools.Squirrel import Squirrel
+from Spanners.Squirrel import Squirrel
 
 squirrel = Squirrel()
 

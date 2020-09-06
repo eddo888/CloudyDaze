@@ -9,7 +9,7 @@ from collections import namedtuple
 from Baubles.Logger import Logger
 from Argumental.Argue import Argue
 
-from MyAWS import config
+from CloudyDaze.MyAWS import config
 
 logger = Logger()
 args = Argue()

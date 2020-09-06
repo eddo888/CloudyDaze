@@ -12,7 +12,7 @@ import boto.ec2.elb
 from Baubles.Logger import Logger
 from Perdy.pretty import prettyPrintLn, Style
 
-from MyAWS import config
+from CloudyDaze.MyAWS import config
 
 logger = Logger()
 

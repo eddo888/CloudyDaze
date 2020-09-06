@@ -27,8 +27,10 @@ setup(
 	install_requires=[
 		'arrow',
 		'xmltodict',
+		'paramiko',
 		'PyYAML',
 		'argcomplete',
+		'Spanners',
 		'Argumental',
 		'GoldenChild',
 		'Baubles',

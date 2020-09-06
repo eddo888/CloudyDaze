@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 
 import os
@@ -6,11 +7,14 @@ from configparser import ConfigParser
 
 #___________________________________________________________________
 def config():
+	'''
+	this module is used to do a fix for the Pythonista use of the AWS boto libraries and the default region for ~/.aws/credentials
+	'''
 	dot_aws = os.path.expanduser('~/Documents/.aws/credentials')
 	#os.environ['AWS_SHARED_CREDENTIALS_FILE'] = dot_aws
 
 	if not os.path.exists(dot_aws): return
-	
+
 	parser = ConfigParser()
 	parser.read(dot_aws)
 	
