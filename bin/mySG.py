@@ -19,13 +19,7 @@ args = Argue()
 @args.command(single=True)
 class MySG(object):
 
-	@args.property(short='s', default='sg-0fd6edded8cc6d9cd')
-	def security_group(self): return
-
-	@args.property(short='r', default='ap-southeast-2')
-	def aws_region(self): return
-	
-	@args.property(short='p', default='Stibo')
+	@args.property(short='p', default='default')
 	def aws_profile(self): return
 
 	@args.property(short='u', default='https://api.ipify.org?format=json')
@@ -61,34 +55,18 @@ class MySG(object):
 		else:
 			logger.setLevel(logging.INFO)
 
-		if self.config:
-			self.conn = boto.ec2.connect_to_region(
-				self.aws_region,
-				aws_access_key_id=self.config['Stibo']['aws_access_key_id'],
-				aws_secret_access_key=self.config['Stibo']['aws_secret_access_key'],
-			)
-		else:
-			self.conn = boto.ec2.connect_to_region(
-				self.aws_region,
-				profile_name=self.aws_profile,
-			)
+		self.conn = boto.ec2.connect_to_region(
+			self.config[self.aws_profile]['region'],
+			aws_access_key_id=self.config[self.aws_profile]['aws_access_key_id'],
+			aws_secret_access_key=self.config[self.aws_profile]['aws_secret_access_key'],
+		)
+		
+		self.security_group = self.config[self.aws_profile]['mysg']
 			
 
 	#_________________________________________________
 	def __del__(self):
 		self.conn.close()
-
-
-	#_________________________________________________
-	def __callback(self, deltas):
-		if self.callback:
-			import webbrowser
-			url = self.callback + '?argv=' + urllib.quote(json.dumps(deltas))
-			logger.debug(url)
-			webbrowser.open(url)
-		else:
-			# pythonista only
-			pass
 
 	
 	#_________________________________________________
@@ -108,7 +86,8 @@ class MySG(object):
 	#_________________________________________________
 	def __security_group(self):
 		for sg in self.conn.get_all_security_groups():
-			if sg.id != self.security_group: continue
+			if sg.id != self.security_group: 
+				continue
 			logger.debug('sg = %s'% sg)
 			return sg
 
@@ -216,31 +195,6 @@ class MySG(object):
 		result['enabled'] = self.enable(ips)
 		return result
 		
-		
-#_____________________________________________________
-def main():	
-	#print('sys.argv: %s'%json.dumps(sys.argv))
-	argv = sys.argv[1:]
-	
-	try:
-		if 'x-callback-url' in sys.argv[-1]:
-			callback = sys.argv[-1]
-			argv = list(['-c', callback]) + list(sys.argv[1:-1])
-		else:
-			# from pythonista libraries
-			import editor
-			# fix for pythonista tools icons
-			if sys.argv[-1] == editor.get_path():
-				argv = sys.argv[1:-1]
-	except:
-		pass
-		
-	#print('argv: %s'%json.dumps(argv))	
-	args.parse(argv)	
-	results = args.execute()
-	print(json.dumps(results, indent=4))
-	
 	
 #_____________________________________________________
-if __name__ == '__main__': main()
-
+if __name__ == '__main__': print(args.execute())

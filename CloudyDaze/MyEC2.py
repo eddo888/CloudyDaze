@@ -24,18 +24,14 @@ logging.getLogger('boto').setLevel(logging.WARNING)
 class MyEC2(object):
 
 	def __init__(self):
+		aws_profile = 'default'
 		self.config = config()
-		region = 'ap-southeast-2'
-		if self.config:
-			self.conn = boto.ec2.connect_to_region(
-				region,
-				aws_access_key_id=self.config['default']['aws_access_key_id'],
-				aws_secret_access_key=self.config['default']['aws_secret_access_key'],
-			)
-		else:
-			self.conn = boto.ec2.connect_to_region(
-				region
-			)
+		self.conn = boto.ec2.connect_to_region(
+			self.config[aws_profile]['region'],
+			aws_access_key_id=self.config['default']['aws_access_key_id'],
+			aws_secret_access_key=self.config['default']['aws_secret_access_key'],
+		)
+
 		
 	def __del__(self):
 		self.close()
@@ -87,7 +83,7 @@ class MyEC2(object):
 		return status
 		
 #_________________________________________________
-def main2():
+def main():
 	output = ''
 	
 	#print('sys.argv: %s'%json.dumps(sys.argv))
@@ -134,26 +130,6 @@ def main2():
 		#print(url)
 		webbrowser.open(url)
 	
-
-#_________________________________________________
-def main3():
-	import boto3
-	from dotmap import DotMap
-	
-	session = boto3.session.Session(region_name='ap-southeast-2')
-	client = session.client('ec2')
-	results = DotMap(client.describe_instances())
-	
-	for r in results.Reservations:
-		print(r.OwnerId)
-		for i in r.Instances:
-			print('\t%s is %s'%(
-				i.InstanceId,
-				i.State.Name
-			))
-			
-	#results = dir(client)
-	#prettyPrintLn(results)
 			
 #_________________________________________________
-if __name__ == '__main__': main2()
+if __name__ == '__main__': main()

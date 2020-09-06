@@ -6,33 +6,22 @@ import os
 from configparser import ConfigParser
 
 #___________________________________________________________________
-def config():
+def config(home='~/'):
 	'''
-	this module is used to do a fix for the Pythonista use of the AWS boto libraries and the default region for ~/.aws/credentials
+	return a dict of the { profile: { key: value }	}
 	'''
-	dot_aws = os.path.expanduser('~/Documents/.aws/credentials')
-	#os.environ['AWS_SHARED_CREDENTIALS_FILE'] = dot_aws
-
-	if not os.path.exists(dot_aws): return
-
-	parser = ConfigParser()
-	parser.read(dot_aws)
 	
+	parser = ConfigParser()
+
+	for file in ['credentials','config']:
+		dot_aws = os.path.expanduser('%s/.aws/%s'%(home,file))
+		if os.path.exists(dot_aws):
+			parser.read(dot_aws)	
+				
 	_config = dict.fromkeys(parser.sections())
 	for key in _config.keys():
 		_config[key] = dict()
 		for (name,value) in parser.items(key):
 			_config[key][name] = value
-		
-	#json.dump(_config,sys.stdout,indent=4)
-	
+
 	return _config
-
-
-#___________________________________________________________________
-def main():
-	print(config())
-
-
-#___________________________________________________________________
-if __name__ == '__main__': main()
