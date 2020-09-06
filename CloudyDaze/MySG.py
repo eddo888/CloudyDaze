@@ -11,9 +11,11 @@ from Argumental.Argue import Argue
 
 from CloudyDaze.MyAWS import config
 
+for logger in ['boto','urllib3.connectionpool']:
+		logging.getLogger(logger).setLevel(logging.ERROR)
+
 logger = Logger()
 args = Argue()
-
 
 #_____________________________________________________
 @args.command(single=True)
@@ -24,9 +26,6 @@ class MySG(object):
 
 	@args.property(short='u', default='https://api.ipify.org?format=json')
 	def url(self): return
-	
-	@args.property(short='c')
-	def callback(self): return
 	
 	@args.property(short='v', flag=True, help='verbose logging')
 	def verbose(self): return False
@@ -46,7 +45,7 @@ class MySG(object):
 		-1
 	]
 
-	#_________________________________________________
+	#_______________________________________________________________
 	def __init__(self):
 		self.config = config()
 
@@ -55,9 +54,6 @@ class MySG(object):
 		else:
 			logger.setLevel(logging.INFO)
 
-		if self.verbose:
-		print(json.dumps(self.config))
-		
 		self.conn = boto.ec2.connect_to_region(
 			self.config[self.profile]['region'],
 			aws_access_key_id=self.config[self.profile]['aws_access_key_id'],
@@ -65,7 +61,8 @@ class MySG(object):
 		)
 		
 		self.security_group = self.config[self.profile]['mysg']
-			
+
+		self._myip = None
 
 	#_________________________________________________
 	def __del__(self):
@@ -74,16 +71,20 @@ class MySG(object):
 	
 	#_________________________________________________
 	def dictate(self, d):
-		return d['cidr_ip'].split('/')[0]
+		return '%s:%s'%(
+			d['cidr_ip'].split('/')[0],
+   			d['to_port']
+		)	
 
 
 	#_________________________________________________
 	@args.operation
 	def myip(self):
-		results = requests.get(self.url).json()
-		_ip = results['ip']
-		logger.debug('myip = %s'%_ip)
-		return _ip
+		if not self._myip:
+			results = requests.get(self.url).json()
+			self._myip = results['ip']
+			logger.info('myip = %s'%self._myip)
+		return self._myip
 
 
 	#_________________________________________________
@@ -108,7 +109,7 @@ class MySG(object):
 					from_port=int(rule.from_port),
 					to_port=int(rule.to_port),
 				)
-				logger.debug('authorised = %s'%self.dictate(_grant))
+				logger.info('authorised = %s'%self.dictate(_grant))
 				_granted.append(_grant)
 				ip = str(grant).replace('/32','')
 		return _granted
@@ -153,11 +154,10 @@ class MySG(object):
 
 		# process the remaing todo items
 		for _do in _todo:
-			logger.debug('authorising = %s'%self.dictate(_do))
+			logger.info('authorising = %s'%self.dictate(_do))
 			_enabled.append(_do)
 			sg.authorize(src_group=None,**_do)
 			
-		self.__callback(dict(enabled=_enabled))
 		return _enabled
 
 
@@ -175,7 +175,7 @@ class MySG(object):
 			for _grant in _granted:
 				if forall or ip == _grant['cidr_ip'].split('/')[0]:
 					_revoked.append(_grant)
-					logger.debug('revoking = %s'%self.dictate(_grant))
+					logger.info('revoking = %s'%self.dictate(_grant))
 					sg.revoke(
 						ip_protocol=_grant['ip_protocol'],
 						from_port=_grant['from_port'],
@@ -184,7 +184,6 @@ class MySG(object):
 						src_group=None
 					)
 		
-		self.__callback(dict(revoked=_revoked))
 		return _revoked
 	
 

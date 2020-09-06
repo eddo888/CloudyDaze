@@ -12,4 +12,4 @@ from Argumental.Argue import Argue
 from CloudyDaze.MyAWS import config
 from CloudyDaze.MySG import MySG, args
 
-print(args.execute())
+args.execute()
