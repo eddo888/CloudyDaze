@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# PYTHON_ARGCOMPLETE_OK
+
 import os, sys, re, locale, paramiko
 
 from datetime import datetime

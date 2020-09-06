@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# PYTHON_ARGCOMPLETE_OK
+
 import re, os, sys, socket, paramiko
 
 from Baubles.Logger import Logger
