@@ -1,16 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, sys, re, locale, paramiko
 
 from datetime import datetime
-
 from socket import timeout as SocketTimeout
 from distutils.version import StrictVersion
 
+from Baubles.Logger import Logger
 from Spanners.Squirrel import Squirrel
+from Argumental.Argue import Argue
+from Perdy.pretty import prettyPrintLn, Style
 
+from CloudyDaze.MyAWS import config
+
+for logger in ['boto','urllib3.connectionpool']:
+		logging.getLogger(logger).setLevel(logging.ERROR)
+
+logger = Logger()
 squirrel = Squirrel()
+args = Argue()
 
+
+#___________________________________________________________________
 # SCPClient borrowed from StaSh
 
 DEBUG = False
@@ -75,6 +86,7 @@ def asunicode_win(s):
 		return s
 
 
+#___________________________________________________________________
 class SCPClient(object):
 	"""
 	An scp1 implementation, compatible with openssh scp.
@@ -124,6 +136,7 @@ class SCPClient(object):
 		self.sanitize = sanitize
 		self._dirtimes = {}
 
+
 	def put(self, files, remote_path=b'.', recursive=False, preserve_times=False):
 		"""
 		Transfer files to remote host.
@@ -157,6 +170,7 @@ class SCPClient(object):
 
 		if self.channel:
 			self.channel.close()
+
 
 	def get(self,
 		remote_path,
@@ -201,6 +215,7 @@ class SCPClient(object):
 		if self.channel:
 			self.channel.close()
 
+
 	def _read_stats(self, name):
 		"""
 		return just the file stats needed for scp
@@ -211,6 +226,7 @@ class SCPClient(object):
 		atime = int(stats.st_atime)
 		mtime = int(stats.st_mtime)
 		return (mode, size, mtime, atime)
+
 
 	def _send_files(self, files):
 		for name in files:
@@ -243,6 +259,7 @@ class SCPClient(object):
 			file_hdl.close()
 			self._recv_confirm()
 
+
 	def _chdir(self, from_dir, to_dir):
 		"""
 		# Pop until we're one level up from our next push.
@@ -262,6 +279,7 @@ class SCPClient(object):
 		# now we're in our common base directory, so on
 		self._send_pushd(to_dir)
 
+
 	def _send_recursive(self, files):
 		for base in files:
 			if not os.path.isdir(base):
@@ -277,6 +295,7 @@ class SCPClient(object):
 			for i in range(len(os.path.split(last_dir))):
 				self._send_popd()
 
+
 	def _send_pushd(self, directory):
 		(mode, size, mtime, atime) = self._read_stats(directory)
 		basename = asbytes(os.path.basename(directory))
@@ -286,13 +305,16 @@ class SCPClient(object):
 			b'\n', b'\\^J') + b'\n')
 		self._recv_confirm()
 
+
 	def _send_popd(self):
 		self.channel.sendall('E\n')
 		self._recv_confirm()
 
+	
 	def _send_time(self, mtime, atime):
 		self.channel.sendall(('T%d 0 %d 0\n' % (mtime, atime)).encode('ascii'))
 		self._recv_confirm()
+
 
 	def _recv_confirm(self):
 		# read scp response
@@ -313,6 +335,7 @@ class SCPClient(object):
 			raise SCPException('No response from server')
 		else:
 			raise SCPException('Invalid response from server', msg)
+
 
 	def _recv_all(self):
 		# loop over scp commands, and receive as necessary
@@ -338,6 +361,7 @@ class SCPClient(object):
 		# directory times can't be set until we're done writing files
 		self._set_dirtimes()
 
+
 	def _set_time(self, cmd):
 		try:
 			times = cmd.split(b' ')
@@ -348,6 +372,7 @@ class SCPClient(object):
 			raise SCPException('Bad time format')
 		# save for later
 		self._utime = (atime, mtime)
+
 
 	def _recv_file(self, cmd):
 		chan = self.channel
@@ -412,6 +437,7 @@ class SCPClient(object):
 			file_hdl.close()
 		# '\x00' confirmation sent in _recv_all
 
+
 	def _recv_pushd(self, cmd):
 		parts = cmd.split(b' ', 2)
 		try:
@@ -441,8 +467,10 @@ class SCPClient(object):
 			self.channel.send(b'\x01' + asbytes(str(e)))
 			raise
 
+
 	def _recv_popd(self, *cmd):
 		self._recv_dir = os.path.split(self._recv_dir)[0]
+
 
 	def _set_dirtimes(self):
 		try:
@@ -452,50 +480,87 @@ class SCPClient(object):
 			self._dirtimes = {}
 
 
+#___________________________________________________________________
 class SCPException(Exception):
 	"""SCP exception class"""
 	pass
 
 
+#___________________________________________________________________
+@args.command(single=True)
 class MySCP(object):
 	
-	def __init__(self, username, hostname, password=None, port=22, key=None):
+	@args.property(short='u')
+	def username(self): return
+
+	@args.property(short='H')
+	def hostname(self): return
+	
+	@args.property(short='p')
+	def password(self): return
+	
+	@args.property(short='P')
+	def port(self): return
+		
+	@args.property(short='k', help='ssh key path')
+	def key(self): return None
+	
+	@args.property(short='t', type=int, default=5, help='connect timeout seconds')
+	def timeour(self): return None
+	
+	@args.property(short='v', flag=True, help='verbose logging')
+	def verbose(self): return False
+	
+	def __init__(self, ):
 		self.client = paramiko.SSHClient()
 		self.client.load_system_host_keys()
-		self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		self.client.set_missing_host_key_policy(
+			paramiko.AutoAddPolicy()
+		)
 
-		if key:
-			privateKey = paramiko.RSAKey.from_private_key_file(os.path.expanduser(key), password=password)
+		if self.key:
+			privateKey = paramiko.RSAKey.from_private_key_file(
+				os.path.expanduser(self.key), 
+				password=self.password)
+			)
 			self.client.connect(
-				hostname,
-				username=username,
+				self.hostname,
+				port=self.port, 
+				username=self.username,
 				pkey=privateKey,
-				timeout=5,
+				timeout=self.timeout,
 			)
 		else:
 			self.client.connect(
-				hostname, 
-				port=port, 
-				username=username, 
-				password=password, 
-				timeout=5,
+				self.hostname, 
+				port=self.port, 
+				username=self.username, 
+				password=self.password, 
+				timeout=self.timeout,
 			)
-		self.sftp = SCPClient(self.client.get_transport(), progress=self.__callback)
+		self.sftp = SCPClient(
+			self.client.get_transport(), progress=self.__callback
+		)
+
 
 	def __del__(self):
 		self.close()
 
+
 	def close(self):
 		self.client.close()
+
 
 	def __callback(self, filename, size, sent):
 		if size == sent:
 			self.files.append(filename.replace(os.environ['HOME'], '~'))
 
+
 	def get(self, source, destination):
 		self.files = []
 		self.sftp.get(source, destination)
 		return self.files
+
 
 	def put(self, source, destination):
 		self.files = []
@@ -503,6 +568,8 @@ class MySCP(object):
 		return self.files
 
 
+
+#___________________________________________________________________
 def main():
 	username = 'ubuntu'
 	hostname = 'pocketrocketsoftware.com'
@@ -523,5 +590,6 @@ def main():
 	mySCP.close()
 
 
+#___________________________________________________________________
 if __name__ == '__main__': main()
 

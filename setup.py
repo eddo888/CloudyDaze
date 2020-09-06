@@ -9,7 +9,7 @@ with codecs.open(path.join(pwd, 'README.md'), 'r', encoding='utf8') as input:
     long_description = input.read()
 
 name='CloudyDaze'
-version='1.0'
+version='1.1'
 
 setup(
 	name=name,
