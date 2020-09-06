@@ -36,4 +36,8 @@ setup(
 		'Baubles',
 		'Perdy',
 	],
+	scripts=[
+		'bin/myEC2.py',
+		'bin/mySG.py',
+	],
 )
