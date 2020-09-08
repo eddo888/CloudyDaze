@@ -2,14 +2,11 @@
 
 # PYTHON_ARGCOMPLETE_OK
 
-import sys, re, os, json
+import sys
 
-sys.path.append('..')
+#sys.path.append('..')
 
-from Baubles.Logger import Logger
-from Argumental.Argue import Argue
-
-from CloudyDaze.MyAWS import config
-from CloudyDaze.MySG import MySG, args
+from CloudyDaze.MySG import args
 
 args.execute()
+

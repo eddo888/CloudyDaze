@@ -2,16 +2,11 @@
 
 # PYTHON_ARGCOMPLETE_OK
 
-import sys, re, os, json
+import sys
 
-sys.path.append('..')
+#sys.path.append('..')
 
-from Baubles.Logger import Logger
-from Argumental.Argue import Argue
-from Perdy.pretty import prettyPrintLn, Style
+from CloudyDaze.MyEC2 import args
 
-from CloudyDaze.MyAWS import config
-from CloudyDaze.MyEC2 import MyEC2, args
-
-print(json.dumps(args.execute(), indent=4))
+print(args.execute())
 

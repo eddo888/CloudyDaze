@@ -27,6 +27,7 @@ setup(
 	install_requires=[
 		'arrow',
 		'xmltodict',
+		'credstash',
 		'paramiko',
 		'PyYAML',
 		'argcomplete',

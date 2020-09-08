@@ -2,17 +2,11 @@
 
 # PYTHON_ARGCOMPLETE_OK
 
-import re, os, sys, socket, paramiko
+import sys
 
-sys.path.append('..')
+#sys.path.append('..')
 
-from Baubles.Logger import Logger
-from Spanners.Squirrel import Squirrel
-from Argumental.Argue import Argue
-from Perdy.pretty import prettyPrintLn, Style
+from CloudyDaze.MySCP import args, test
 
-from CloudyDaze.MyAWS import config
-from CloudyDaze.MySCP import MySCP, args
-
-
+#test()
 print(args.execute())

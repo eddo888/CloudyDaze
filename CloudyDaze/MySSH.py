@@ -9,10 +9,9 @@ from Spanners.Squirrel import Squirrel
 from Argumental.Argue import Argue
 from Perdy.pretty import prettyPrintLn, Style
 
-from CloudyDaze.MyAWS import config
+from CloudyDaze.MyAWS import config, silence
 
-for logger in ['boto','urllib3.connectionpool']:
-		logging.getLogger(logger).setLevel(logging.ERROR)
+silence()
 
 logger = Logger()
 squirrel = Squirrel()
@@ -32,28 +31,33 @@ class MySSH(object):
 	@args.property(short='p')
 	def password(self): return
 	
-	@args.property(short='P')
-	def port(self): return
+	@args.property(short='P', type=int, default=22)
+	def port(self): return 22
 		
 	@args.property(short='k', help='ssh key path')
 	def key(self): return None
 	
 	@args.property(short='t', type=int, default=5, help='connect timeout seconds')
-	def timeour(self): return None
+	def timeout(self): return None
 	
 	@args.property(short='v', flag=True, help='verbose logging')
 	def verbose(self): return False
 
 	def __init__(self):
-		# force ip4 host connect
-		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.connect((self.hostname, self.port))
-		
 		self.client = paramiko.SSHClient()		
 		self.client.load_system_host_keys()
 		self.client.set_missing_host_key_policy(
 			paramiko.AutoAddPolicy()
 		)
+		self.connected = False
+
+	def connect(self):
+		if self.connected:
+			return
+
+		# force ip4 host connect
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((self.hostname, self.port))
 		
 		if self.key:
 			privateKey = paramiko.RSAKey.from_private_key_file(
@@ -78,41 +82,41 @@ class MySSH(object):
 				timeout=self.timeout,
 			)
 
+		self.connected = True
 
 	def __del__(self):
 		self.close()
 		
 
 	def close(self):
-		self.client.close()
+		self.connected = False
+		if self.client:
+			self.client.close()
 		
 
 	@args.operation
-	@args.parameter(name='command', help='execute command string')
-	def execute(self, command):
-		print('$ %s' % command)
-		stdin, stdout, stderr = self.client.exec_command(command)
-		sys.stderr.write(stderr.read())
-		return stdout.read()
+	@args.parameter(name='phrase', short='c', help='execute command string')
+	def execute(self, phrase=''):
+		self.connect()
+		print('$ %s' % phrase)
+		stdin, stdout, stderr = self.client.exec_command(phrase)
+		sys.stderr.write(str(stderr.read()))
+		return str(stdout.read())
 		
 
 #___________________________________________________________________
-def main():
-	username = 'ubuntu'
-	hostname = 'pocketrocketsoftware.com'
-	password = squirrel.get('ssh:%s:%s'%(username,hostname)) 
-	key = '~/.ssh/id_rsa'
-		
-	remote = '/home/%s/hello.md' % username
-	local = os.path.expanduser('~/Documents/hello.md')
+def test():
+	mySSH = MySSH()
+	mySSH.username = 'ubuntu'
+	mySSH.hostname = 'pocketrocketsoftware.com'
+	mySSH.password = squirrel.get('ssh:%s:%s'%(
+		mySSH.username,
+		mySSH.hostname
+	)) 
+	mySSH.key = '~/.ssh/id_rsa'
 
-
-	mySSH = MySSH(username, hostname, password=password, key=key)
-	
+	mySSH.connect()
+	print(mySSH.execute('whoami'))
 	print(mySSH.execute('uptime'))
 	mySSH.close()
-
-
-#___________________________________________________________________
-if __name__ == '__main__': main()
 

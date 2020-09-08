@@ -9,10 +9,9 @@ from collections import namedtuple
 from Baubles.Logger import Logger
 from Argumental.Argue import Argue
 
-from CloudyDaze.MyAWS import config
+from CloudyDaze.MyAWS import config, silence
 
-for logger in ['boto','urllib3.connectionpool']:
-		logging.getLogger(logger).setLevel(logging.ERROR)
+silence()
 
 logger = Logger()
 args = Argue()

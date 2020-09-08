@@ -1,9 +1,28 @@
 #!/usr/bin/env python3
 
-import os
+import os, logging
 
 from configparser import ConfigParser
 
+def silence():
+	for logger in [
+		'boto',
+		'botocore.auth',
+		'botocore.hooks',
+   		'botocore.client',
+		'botocore.endpoint',
+   		'botocore.parsers',
+   		'botocore.loaders',
+   		'botocore.credentials',
+		'botocore.retryhandler',
+		'boto3.resources.action',
+		'boto3.resources.factory',
+   		'paramiko.transport',
+		'urllib3.connectionpool'
+	]:
+		logging.getLogger(logger).setLevel(logging.ERROR)
+
+		
 #___________________________________________________________________
 def config(home='~/'):
 	'''

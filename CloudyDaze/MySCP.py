@@ -2,7 +2,7 @@
 
 # PYTHON_ARGCOMPLETE_OK
 
-import os, sys, re, locale, paramiko
+import os, sys, re, locale, logging, socket, paramiko
 
 from datetime import datetime
 from socket import timeout as SocketTimeout
@@ -13,10 +13,9 @@ from Spanners.Squirrel import Squirrel
 from Argumental.Argue import Argue
 from Perdy.pretty import prettyPrintLn, Style
 
-from CloudyDaze.MyAWS import config
+from CloudyDaze.MyAWS import config, silence
 
-for logger in ['boto','urllib3.connectionpool']:
-		logging.getLogger(logger).setLevel(logging.ERROR)
+silence()
 
 logger = Logger()
 squirrel = Squirrel()
@@ -501,29 +500,39 @@ class MySCP(object):
 	@args.property(short='p')
 	def password(self): return
 	
-	@args.property(short='P')
-	def port(self): return
+	@args.property(short='P', type=int, default=22)
+	def port(self): return 22
 		
 	@args.property(short='k', help='ssh key path')
 	def key(self): return None
 	
 	@args.property(short='t', type=int, default=5, help='connect timeout seconds')
-	def timeour(self): return None
+	def timeout(self): return None
 	
 	@args.property(short='v', flag=True, help='verbose logging')
 	def verbose(self): return False
 	
-	def __init__(self, ):
+	def __init__(self):
+		
 		self.client = paramiko.SSHClient()
 		self.client.load_system_host_keys()
 		self.client.set_missing_host_key_policy(
 			paramiko.AutoAddPolicy()
 		)
+		self.connected = False
 
+	def connect(self):
+		if self.connected:
+			return
+
+		# force ip4 host connect
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((self.hostname, self.port))
+		
 		if self.key:
 			privateKey = paramiko.RSAKey.from_private_key_file(
 				os.path.expanduser(self.key), 
-				password=self.password)
+				password=self.password
 			)
 			self.client.connect(
 				self.hostname,
@@ -543,55 +552,65 @@ class MySCP(object):
 		self.sftp = SCPClient(
 			self.client.get_transport(), progress=self.__callback
 		)
-
+		
+		self.connected = True
 
 	def __del__(self):
 		self.close()
 
 
 	def close(self):
-		self.client.close()
+		if self.connected:
+			if self.client:
+				self.client.close()
 
 
 	def __callback(self, filename, size, sent):
-		if size == sent:
-			self.files.append(filename.replace(os.environ['HOME'], '~'))
+		#if size == sent:
+		#	self.files.append(filename.replace(os.environ['HOME'], '~'))
+		self.files.append(filename)
 
-
-	def get(self, source, destination):
+	@args.operation
+	@args.parameter(name='source', short='s', help='path to remote file or dir')
+	@args.parameter(name='destination', short='d', help='path to local file or dir')
+	def get(self, source=None, destination=None):
+		self.connect()
 		self.files = []
 		self.sftp.get(source, destination)
 		return self.files
 
 
-	def put(self, source, destination):
+	@args.operation
+	@args.parameter(name='source', short='s', help='path to local file or dir')
+	@args.parameter(name='destination', short='d', help='path to remote file or dir')
+	def put(self, source=None, destination=None):
+		self.connect()
 		self.files = []
 		self.sftp.put(source, destination)
 		return self.files
 
 
-
+	
 #___________________________________________________________________
-def main():
-	username = 'ubuntu'
-	hostname = 'pocketrocketsoftware.com'
-	password = squirrel.get('ssh:%s:%s'%(username,hostname)) 
-	key = '~/.ssh/id_rsa'
+def test():
+	mySCP = MySCP()
+	mySCP.username = 'ubuntu'
+	mySCP.hostname = 'pocketrocketsoftware.com'
+	mySCP.password = squirrel.get('ssh:%s:%s'%(
+		mySCP.username,
+		mySCP.hostname
+	)) 
+	mySCP.key = '~/.ssh/id_rsa'
 		
-	remote = '/home/%s/hello.md' % username
+	remote = '/home/%s/hello.md' % mySCP.username
 	local = os.path.expanduser('~/Documents/hello.md')
 
 	now = datetime.now()
 	with open(local, 'w') as output:
 		output.write(now.strftime('%Y-%m-%d %H:%M:%S'))
 
-	mySCP = MySCP(username, hostname, password=password, key=key)
-	
+	mySCP.connect()
 	print(mySCP.put(local, remote))
 	print(mySCP.get(remote, local.replace('.txt', '.new.txt')))
 	mySCP.close()
-
-
-#___________________________________________________________________
-if __name__ == '__main__': main()
 
