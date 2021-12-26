@@ -108,7 +108,7 @@ class MySG(object):
 					from_port=int(rule.from_port),
 					to_port=int(rule.to_port),
 				)
-				logger.info('authorised = %s'%self.dictate(_grant))
+				logger.info('= %s'%self.dictate(_grant))
 				_granted.append(_grant)
 				ip = str(grant).replace('/32','')
 		return _granted
@@ -153,7 +153,7 @@ class MySG(object):
 
 		# process the remaing todo items
 		for _do in _todo:
-			logger.info('authorising = %s'%self.dictate(_do))
+			logger.info('+ %s'%self.dictate(_do))
 			_enabled.append(_do)
 			sg.authorize(src_group=None,**_do)
 			
@@ -174,7 +174,7 @@ class MySG(object):
 			for _grant in _granted:
 				if forall or ip == _grant['cidr_ip'].split('/')[0]:
 					_revoked.append(_grant)
-					logger.info('revoking = %s'%self.dictate(_grant))
+					logger.info('- %s'%self.dictate(_grant))
 					sg.revoke(
 						ip_protocol=_grant['ip_protocol'],
 						from_port=_grant['from_port'],
