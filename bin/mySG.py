@@ -2,9 +2,10 @@
 
 # PYTHON_ARGCOMPLETE_OK
 
-import sys
+import sys, os, re
 
-#sys.path.append('..')
+if os.path.dirname(sys.argv[0]) == '.':
+	sys.path.append('..')
 
 from CloudyDaze.MySG import args
 

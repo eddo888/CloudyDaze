@@ -31,9 +31,9 @@ class MySG(object):
 
 	ports = {
 		22: 'tcp',
-		443: 'tcp',
-		3389: 'tcp',
 		1521: 'tcp',
+		1883: 'tcp',
+		3389: 'tcp',
 		8888: 'tcp',
 	}
 	
