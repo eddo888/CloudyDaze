@@ -195,5 +195,7 @@ class MySG(object):
 		result['revoked'] = self.revoke(ips, forall)
 		result['enabled'] = self.enable(ips)
 		return result
-		
-	
+
+				
+if __name__ == '__main__': args.execute()
+
