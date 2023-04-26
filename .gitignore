@@ -5,3 +5,4 @@ dist
 credstash.log
 .project
 .pydevproject
+.dbeaver
