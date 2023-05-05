@@ -52,7 +52,7 @@ class MyEC2(object):
 	def list(self, ids=[]):
 		status = dict()
 		for reservation in self.conn.get_all_reservations():
-			logger.debug('reservation: %s'%reservation.id)
+			print('reservation: %s'%reservation.id)
 			for instance in reservation.instances:
 				if len(ids) > 0 and instance.id not in ids: continue
 				if self.verbose:
@@ -69,13 +69,13 @@ class MyEC2(object):
 	def start(self, ids=[]):
 		status = dict()
 		for reservation in self.conn.get_all_reservations():
-			logger.debug('reservation: %s'%reservation.id)
+			print('reservation: %s'%reservation.id)
 			for instance in reservation.instances:
-				logger.info(instance)
+				print(instance)
 				if len(ids) > 0 and instance.id not in ids: continue
 				if instance.state not in [ u'pending', u'starting', u'running' ]:
 					instance.start()
-					logger.info(instance)
+					print(instance)
 				if str(instance.state) not in status.keys():
 					status[str(instance.state)] = list()
 				status[str(instance.state)].append(str(instance.id))
@@ -87,15 +87,17 @@ class MyEC2(object):
 	def stop(self, ids=[]):
 		status = dict()
 		for reservation in self.conn.get_all_reservations():
-			logger.debug('reservation: %s'%reservation.id)
+			print('reservation: %s'%reservation.id)
 			for instance in reservation.instances:
-				logger.info(instance)
+				print(instance)
 				if len(ids) > 0 and instance.id not in ids: continue
 				if instance.state not in [ u'pending', u'stopping', u'stopped' ]:
 					instance.stop()
-					logger.info(instance)
+					print(instance)
 				if str(instance.state) not in status.keys():
 					status[str(instance.state)] = list()
 				status[str(instance.state)].append(str(instance.id))
 		return status
 		
+		
+if __name__ == '__main__': args.execute()

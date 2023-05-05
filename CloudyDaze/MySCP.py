@@ -614,3 +614,5 @@ def test():
 	print(mySCP.get(remote, local.replace('.txt', '.new.txt')))
 	mySCP.close()
 
+
+if __name__ == '__main__': test()

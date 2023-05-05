@@ -120,3 +120,5 @@ def test():
 	print(mySSH.execute('uptime'))
 	mySSH.close()
 
+if __name__ == '__main__': test()
+
