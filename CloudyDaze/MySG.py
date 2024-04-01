@@ -36,6 +36,7 @@ class MySG(object):
 		3389: 'tcp',
 		8888: 'tcp',
 		9999: 'tcp',
+		61616: 'tcp',
 	}
 	
 	types=[
